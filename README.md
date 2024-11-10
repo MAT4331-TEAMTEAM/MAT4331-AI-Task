@@ -104,7 +104,7 @@ numpy
 
 비속어 판별 로직의 경우 처음 실행했을 때 이러한 결과가 표시되면 된다.
 
-![game prediction result](image.png)
+![game prediction result](images/image8.png)
 
 승패 예측 로직의 경우 처음 실행했을 때 이러한 결과가 표시되면 된다.
 
