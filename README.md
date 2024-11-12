@@ -39,7 +39,7 @@ WSL을 실행하면 이렇게 터미널에서 작업을 진행할 수 있는데,
 ```bash
 $ sudo apt update
 $ sudo apt upgrade
-$ sudo apt install docker
+$ sudo snap install docker
 $ sudo apt install docker-compose
 ```
 
