@@ -39,7 +39,7 @@ WSL을 실행하면 이렇게 터미널에서 작업을 진행할 수 있는데,
 ```bash
 $ sudo apt update
 $ sudo apt upgrade
-$ sudo snap install docker
+$ sudo apt install docker
 $ sudo apt install docker-compose
 ```
 
@@ -59,9 +59,7 @@ $ cd "복사한 경로"
 
 `cd`는 change directory의 줄임말로, 말 그대로 현재 보고 있는 디렉터리를 변경한다는 말이다. `cd ..` 명령어로는 현재 보고 있는 디렉터리의 상위 디렉터리로 이동이 가능하고, `cd "경로"`를 통해 다른 디렉터리로 이동할 수도 있다.
 
-~~어쨌든 **src** 디렉터리까지 이동했으면 다음과 같은 명령어로 서버를 실행한다.~~
-
-20241122. 디렉터리 구조가 변경되었다. **src** 디렉터리가 사라졌으므로 그냥 프로젝트 디렉터리까지만 이동하면 된다.
+어쨌든 **src** 디렉터리까지 이동했으면 다음과 같은 명령어로 서버를 실행한다.
 
 ```bash
 $ sudo docker-compose up --build
@@ -106,7 +104,7 @@ numpy
 
 비속어 판별 로직의 경우 처음 실행했을 때 이러한 결과가 표시되면 된다.
 
-![game prediction result](images/image8.png)
+![game prediction result](image.png)
 
 승패 예측 로직의 경우 처음 실행했을 때 이러한 결과가 표시되면 된다.
 
@@ -181,17 +179,16 @@ async def mock_game_prediction():
         PA=5, AB=4, R=1, H=2, HR=1, RBI=2, BB=1, HBP=0, SO=1, GO=1, FO=2,
         NP=20, GDP=0, LOB=3, ABG=0.5, OPS=1.0, LI=0.9, WPA=0.1, RE24=0.5
     )
+
     mock_pitch_info = PitchInfo(
         IP=5.0, TBF=20, H=3, R=1, ER=1, BB=2, HBP=0, K=5, HR=0, GO=3, FO=4,
         NP=80, S=60, IR=0, IS=0, GSC=60, ERA=2.0, WHIP=1.2, LI=0.9, WPA=0.2, RE24=0.5
     )
+
     mock_away_team = TeamData(bat_info=mock_bat_info, pitch_info=mock_pitch_info)
     mock_home_team = TeamData(bat_info=mock_bat_info, pitch_info=mock_pitch_info)
 
-    mock_away_team_stats = [mock_away_team] * 50
-    mock_home_team_stats = [mock_home_team] * 50
-
-    mock_data = GamePredictionRequest(game_id="00000001", away_team_stats=mock_away_team_stats, home_team_stats=mock_home_team_stats)
+    mock_data = GamePredictionRequest(away_team=mock_away_team, home_team=mock_home_team)
 
     result = predict_outcome(mock_data)
 
@@ -203,7 +200,7 @@ async def mock_game_prediction():
 **src/services/game_service.py**
 
 ```python
-from models.game_data import GamePredictionRequest
+from src.models.game_data import GamePredictionRequest
 
 # 승패 예측 함수
 # 주어진 팀 데이터를 바탕으로 양 팀의 점수를 예측하고 반환한다.
@@ -211,34 +208,33 @@ def predict_outcome(data: GamePredictionRequest):
     # 데이터 확인을 위한 로그
     print(f"전체 데이터: {data}")
 
-    print(f"어웨이 팀 데이터: {data.away_team_stats}")
-    print(f"홈 팀 데이터: {data.home_team_stats}")
+    print(f"어웨이 팀 데이터: {data.away_team}")
+    print(f"홈 팀 데이터: {data.home_team}")
 
-    print("가장 최근의 게임 데이터")
-    print(f"어웨이 팀 | 타격 {data.away_team_stats[0].bat_info}")
-    print(f"어웨이 팀 | 투구 {data.away_team_stats[0].pitch_info}")
-    print(f"홈 팀 | 타격 {data.away_team_stats[0].bat_info}")
-    print(f"홈 팀 | 투구 {data.away_team_stats[0].pitch_info}")
+    print(f"어웨이 팀 타격 데이터: {data.away_team.bat_info}")
+    print(f"어웨이 팀 투구 데이터: {data.away_team.pitch_info}")
+
+    print(f"홈 팀 타격 데이터: {data.home_team.bat_info}")
+    print(f"홈 팀 투구 데이터: {data.home_team.pitch_info}")
 
     # 결과 데이터: 모델을 실행하고 아래 이름의 변수를 반환
-    predicted_away_score = 1
-    predicted_home_score = 2
+    away_score = 1
+    home_score = 2
 
     # TODO: AI 모델을 불러와 필요한 작업을 수행하고 결과값을 반환한다.
 
     return {
-        "game_id": data.game_id,
-        "predicted_away_score": predicted_away_score,
-        "predicted_home_score": predicted_home_score,
+        "away_score": away_score,
+        "home_score": home_score,
     }
 ```
 
-AI 모델을 불러와 승패 예측을 수행하는 로직을 여기에 구현하면 된다. 로그를 찍어둔 것처럼 `data.away_team_stats[index].bat_info`와 같은 문법으로 어웨이 팀의 타격 데이터를 추출할 수 있다. 데이터가 매우 복잡하기 때문에 **models.game_data.py**를 참고하는 것을 권장한다.
-
-참고로 0번 인덱스가 가장 최근의 경기를 나타낸다. RNN 구조에 맞추어 최근 10경기 데이터를 추출하고자 한다면 `data.away_team_stats[:10]`과 같이 추출할 수 있다.
+AI 모델을 불러와 승패 예측을 수행하는 로직을 여기에 구현하면 된다. 로그를 찍어둔 것처럼 `data.away_team.bat_info`와 같은 문법으로 어웨이 팀의 타격 데이터를 추출할 수 있다. 데이터가 매우 복잡하기 때문에 **src.models.game_data.py**를 참고하는 것을 권장한다.
 
 ## 정리
 
 백엔드에서는 흔히 외부로부터 요청을 받는 부분(라우터 또는 컨트롤러 계층)과 핵심 로직을 수행하는 부분(서비스 계층)을 분리한다. 현재 설명한 코드들에서는 **services**라는 이름의 디렉터리 안에 존재하는 코드들이 핵심 로직을 수행하는 부분이고, **routers**라는 이름의 디렉터리 안에 존재하는 코드들이 외부로부터 요청을 받는 부분이다.
 
 AI 개발자들이 모델을 연결하여 서비스 로직을 명세사항에 따라 잘 구성하면 백엔드 개발자는 이를 토대로 어떤 유형의 요청이든 형식만 잘 준수하여 들어온다면 일관된 방식으로 인공지능 모델을 실행하고 결과값을 전달할 수 있다.
+
+---
